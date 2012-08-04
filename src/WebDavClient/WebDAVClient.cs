@@ -35,10 +35,16 @@ namespace Cadenza.Net
 
 		public string Directory {get; internal set;}
 		public string Name {get; internal set;}
+		public string Path {get; internal set;}
 		public WebDavEntryType Type {get; internal set;}
 
 		internal WebDavEntry ()
 		{
+		}
+
+		public override string ToString ()
+		{
+			return Path;
 		}
 	}
 
@@ -195,16 +201,20 @@ namespace Cadenza.Net
                     {
                         XmlNode xmlNode = node.SelectSingleNode("d:href", xmlNsManager);
                         string filepath = Uri.UnescapeDataString(xmlNode.InnerXml);
-                        string[] file = filepath.Split(new string[1] { basePath }, 2, StringSplitOptions.RemoveEmptyEntries);
-						if (file.Length == 0)
+						if (filepath.StartsWith (basePath))
+							filepath = filepath.Substring (basePath.Length);
+						if (filepath.Length == 0)
 							continue;
-                        // Want to see directory contents, not the directory itself.
-                        if (file[file.Length-1] == remoteFilePath || file[file.Length-1] == server)
-							continue;
+						var type = filepath.EndsWith ("/") ? WebDavEntryType.Directory : WebDavEntryType.File;
+						int endDir = filepath.LastIndexOf ('/');
+						if (type == WebDavEntryType.Directory)
+							endDir = filepath.LastIndexOf ("/", endDir - 1);
+						endDir++;
 						yield return new WebDavEntry {
-							Directory   = file.Length == 1 ? "" : file [0],
-							Name        = file [file.Length-1],
-							Type        = file [file.Length-1].EndsWith ("/") ? WebDavEntryType.Directory : WebDavEntryType.File,
+							Directory   = filepath.Substring (0, endDir),
+							Name        = filepath.Substring (endDir),
+							Path        = filepath,
+							Type        = type,
 						};
                     }
                 }
