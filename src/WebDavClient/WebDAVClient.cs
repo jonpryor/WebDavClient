@@ -2,11 +2,12 @@
  * (C) 2010 Kees van den Broek: kvdb@kvdb.net
  *          D-centralize: d-centralize.nl
  *          
- * Latest version and examples on: http://kvdb.net/projects/webdav
+ * Latest van den Broek version and examples on: http://kvdb.net/projects/webdav
  * 
  * Feel free to use this code however you like.
  * http://creativecommons.org/license/zero/
  * 
+ * Copyright (C) 2012 Xamarin Inc. (http://xamarin.com)
  */
 
 using System;
@@ -21,7 +22,7 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 */
 
-namespace net.kvdb.webdav
+namespace Cadenza.Net
 {
     public delegate void ListCompleteDel(List<String> files, int statusCode);
     public delegate void UploadCompleteDel(int statusCode, object state);
@@ -29,7 +30,7 @@ namespace net.kvdb.webdav
     public delegate void CreateDirCompleteDel(int statusCode);
     public delegate void DeleteCompleteDel(int statusCode);
 
-    public class WebDAVClient
+    public class WebDavClient
     {
         public event ListCompleteDel ListComplete;
         public event UploadCompleteDel UploadComplete;
