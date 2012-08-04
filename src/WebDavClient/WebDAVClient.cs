@@ -203,7 +203,7 @@ namespace Cadenza.Net
                         string filepath = Uri.UnescapeDataString(xmlNode.InnerXml);
 						if (filepath.StartsWith (basePath))
 							filepath = filepath.Substring (basePath.Length);
-						if (filepath.Length == 0)
+						if (filepath.Length == 0 || filepath == remoteFilePath)
 							continue;
 						var type = filepath.EndsWith ("/") ? WebDavEntryType.Directory : WebDavEntryType.File;
 						int endDir = filepath.LastIndexOf ('/');
