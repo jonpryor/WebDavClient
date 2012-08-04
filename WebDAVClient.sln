@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDAVClient", "WebDAVClient\WebDAVClient.csproj", "{F21EB154-C84E-4390-87CF-271E3DF4F059}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDavClient", "src\WebDavClient\WebDAVClient.csproj", "{F21EB154-C84E-4390-87CF-271E3DF4F059}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebDAVClient", "TestWebDAVClient\TestWebDAVClient.csproj", "{C8999849-83F9-4B2A-AFD6-1C6ED43A4B87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDavClient-Tests", "src\WebDavClient\Test\WebDavClient-Tests.csproj", "{C8999849-83F9-4B2A-AFD6-1C6ED43A4B87}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
