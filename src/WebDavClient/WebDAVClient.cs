@@ -436,7 +436,11 @@ namespace Cadenza.Net
 
                 // Perform asynchronous request.
 				return Task.Factory.FromAsync (asyncState.request.BeginGetRequestStream, ReadCallback, asyncState)
-					.ContinueWith (t => Task<TResult>.Factory.FromAsync (httpWebRequest.BeginGetResponse, callback, state).Result);
+					.ContinueWith (t => {
+						if (t.IsFaulted)
+							throw t.Exception;
+						return Task<TResult>.Factory.FromAsync (httpWebRequest.BeginGetResponse, callback, state).Result;
+					});
             }
             else
             {
