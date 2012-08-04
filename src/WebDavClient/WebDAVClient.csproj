@@ -8,8 +8,8 @@
     <ProjectGuid>{F21EB154-C84E-4390-87CF-271E3DF4F059}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WebDAVClient</RootNamespace>
-    <AssemblyName>WebDAVClient</AssemblyName>
+    <RootNamespace>Cadenza.WebDavClient</RootNamespace>
+    <AssemblyName>WebDavClient</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
