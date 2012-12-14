@@ -8,7 +8,7 @@
     <ProjectGuid>{F21EB154-C84E-4390-87CF-271E3DF4F059}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Cadenza.WebDavClient</RootNamespace>
+    <RootNamespace>Cadenza.Net</RootNamespace>
     <AssemblyName>WebDavClient</AssemblyName>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -33,13 +33,16 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="WebDAVClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Cadenza.Net\WebDavMethodBuilder.cs" />
+    <Compile Include="Cadenza.Net\WebDavNames.cs" />
+    <Compile Include="Cadenza.Net\WebDavMethods.cs" />
+    <Compile Include="Cadenza.Net\WebDavMethod.cs" />
+    <Compile Include="Cadenza.Net\WebDavPropertyFindMethod.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -49,4 +52,13 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Policies>
+          <DotNetNamingPolicy DirectoryNamespaceAssociation="Flat" ResourceNamePolicy="FileFormatDefault" />
+        </Policies>
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
 </Project>
