@@ -10,7 +10,18 @@ namespace Cadenza.Net
 {
 	public class WebDavMethodBuilder {
 
-		public Uri Server {get; set;}
+		Uri server;
+		public Uri Server {
+			get {return server;}
+			set {
+				if (!value.AbsolutePath.EndsWith ("/")) {
+					var b = new UriBuilder (value);
+					b.Path += "/";
+					value = b.Uri;
+				}
+				server = value;
+			}
+		}
 		public NetworkCredential Credentials {get; set;}
 		public IDictionary<string, string> RequestHeaders {get; set;}
 
