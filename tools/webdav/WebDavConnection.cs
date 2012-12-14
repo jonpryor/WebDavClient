@@ -99,10 +99,7 @@ namespace Cadenza.Tools.WebDav {
 			}
 			Console.WriteLine ("Response: {0}", t.Result.Response);
 			foreach (var e in t.Result.GetEntries ()) {
-				if (e.Exception != null)
-					Console.Error.WriteLine ("webdav: {0}", e.Exception);
-				else
-					Console.WriteLine ("Name={0} Directory={1} Path={2} Result={3}", e.Name, e.Directory, e.Path, e.Response);
+				Console.WriteLine ("Name={0} Directory={1} Path={2} Result={3}", e.Name, e.Directory, e.Path, e.Response);
 			}
 		}
 	}
