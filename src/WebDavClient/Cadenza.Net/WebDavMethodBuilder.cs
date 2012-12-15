@@ -24,14 +24,14 @@ namespace Cadenza.Net
 		}
 		public NetworkCredential Credentials {get; set;}
 		public IDictionary<string, string> RequestHeaders {get; set;}
-
+		public TextWriter Log {get; set;}
+		
 		public Task<WebDavPropertyFindMethod> CreatePropertyFindMethodAsync (string path = null, int? depth = 1, XElement request = null)
 		{
 			request = request ?? new XElement (WebDavNames.Propfind,
 					new XElement (WebDavNames.Propname));
 			var uri = CreateUri (path);
-			Console.WriteLine ("# S={0}; P={1} -> {2}", Server, path, uri);
-			return CreateMethodAsync (new WebDavPropertyFindMethod (uri, ToStream (request)), uri, "PROPFIND",
+			return CreateMethodAsync (new WebDavPropertyFindMethod (uri, ToStream (request)), uri, WebDavMethods.PropertyFind,
 					depth == null ? null : GetRequestHeaders ("Depth", depth.ToString ()));
 		}
 
@@ -79,6 +79,11 @@ namespace Cadenza.Net
 			System.Net.ServicePointManager.Expect100Continue = false;
 
 			result.Request = request;
+			result.Builder = this;
+
+			if (Log != null) {
+				Log.WriteLine ("{0} {1}", request.Method, uri.AbsolutePath);
+			}
 
 			return Task<TResult>.Factory.StartNew (() => {
 				result.UploadContentAsync ().Wait ();
