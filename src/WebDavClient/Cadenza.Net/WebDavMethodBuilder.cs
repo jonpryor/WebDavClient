@@ -26,13 +26,24 @@ namespace Cadenza.Net
 		public IDictionary<string, string> RequestHeaders {get; set;}
 		public TextWriter Log {get; set;}
 		
-		public Task<WebDavPropertyFindMethod> CreatePropertyFindMethodAsync (string path = null, int? depth = 1, XElement request = null)
+		public Task<WebDavPropertyFindMethod> CreateFileStatusMethodAsync (string path = null, int? depth = null, XElement request = null)
 		{
+			request = request ?? new XElement (WebDavNames.Propfind,
+					new XElement (WebDavNames.Prop,
+			              new XElement (WebDavNames.CreationDate),
+			              new XElement (WebDavNames.ResourceType),
+			              new XElement (WebDavNames.GetContentLength)));
+			return CreatePropertyFindMethodAsync (path, depth, request);
+		}
+
+		public Task<WebDavPropertyFindMethod> CreatePropertyFindMethodAsync (string path = null, int? depth = null, XElement request = null)
+		{
+			depth = depth ?? 1;
 			request = request ?? new XElement (WebDavNames.Propfind,
 					new XElement (WebDavNames.Propname));
 			var uri = CreateUri (path);
 			return CreateMethodAsync (new WebDavPropertyFindMethod (uri, ToStream (request)), uri, WebDavMethods.PropertyFind,
-					depth == null ? null : GetRequestHeaders ("Depth", depth.ToString ()));
+					GetRequestHeaders ("Depth", depth == -1 ? "infinity" : depth.ToString ()));
 		}
 
 		Uri CreateUri (string path)
