@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Xml.Linq;
+
+using Mono.Options;
 
 using Cadenza.Net;
 
@@ -41,6 +45,7 @@ namespace Cadenza.Tools.WebDav {
 			{ "exit",     Exit },
 			{ "server",   Server },
 			{ "ls",       ListPath },
+			{ "verbose",  SetLogging },
 		};
 
 		[Help ("List all commands")]
@@ -88,19 +93,66 @@ namespace Cadenza.Tools.WebDav {
 
 		[Help ("PATH")]
 		[Help ("List files at PATH")]
-		static void ListPath (WebDavConnection state, string path)
+		static void ListPath (WebDavConnection state, string args)
 		{
-			var t = string.IsNullOrEmpty (path)
-				? state.Builder.CreatePropertyFindMethodAsync ()
-				: state.Builder.CreatePropertyFindMethodAsync (path);
-			if (t.IsFaulted) {
-				Console.Error.WriteLine ("webdav: {0}", t.Exception.Flatten ());
+			string p = null;
+			int?   d = null;
+			string x = null;
+			int i = 0;
+			foreach (string s in ArgumentSource.GetArguments (new StringReader (args))) {
+				switch (i++) {
+				case 0:
+					p = s;
+					break;
+				case 1:
+					d = int.Parse (s);
+					break;
+				default:
+					x = x == null ? s : x + " " + s;
+					break;
+				}
+			}
+			XElement r = null;
+			if (x != null) {
+				try {
+					r = XElement.Parse (x);
+				} catch (Exception e) {
+					Console.Error.WriteLine ("Invalid XML in '{0}': {1}", x, e.Message);
+					return;
+				}
+			}
+			using (var t = state.Builder.CreateFileStatusMethodAsync (p, d, r)) {
+				try {
+					t.Wait ();
+				} catch (Exception e) {
+					Console.Error.WriteLine ("webdav: {0}", e);
+					return;
+				}
+				if (t.IsFaulted) {
+					Console.Error.WriteLine ("webdav: {0}", t.Exception.Flatten ());
+					return;
+				}
+				foreach (var e in t.Result.GetResponses ()) {
+					Console.WriteLine ("{0} {1,10} {2,-12} {3}",
+							e.ResourceType == null ? " " : e.ResourceType == WebDavResourceType.Collection ? "d" : "-",
+							e.ContentLength,
+							e.CreationDate == null ? "" : e.CreationDate.Value.ToString ("MMM d HH:MM"),
+							e.Href);
+				}
+			}
+		}
+
+		[Help ("Enable verbose logging")]
+		static void SetLogging (WebDavConnection state, string args)
+		{
+			if (string.IsNullOrEmpty (args)) {
+				Console.WriteLine (state.Builder.Log != null);
 				return;
 			}
-			Console.WriteLine ("Response: {0}", t.Result.Response);
-			foreach (var e in t.Result.GetEntries ()) {
-				Console.WriteLine ("Name={0} Directory={1} Path={2} Result={3}", e.Name, e.Directory, e.Path, e.Response);
-			}
+			if (args == "1" || args == "true")
+				state.Builder.Log = Console.Out;
+			else
+				state.Builder.Log = null;
 		}
 	}
 }

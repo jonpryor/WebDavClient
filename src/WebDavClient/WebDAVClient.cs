@@ -37,7 +37,6 @@ namespace Cadenza.Net
 		public string Name {get; internal set;}
 		public string Path {get; internal set;}
 		public WebDavEntryType Type {get; internal set;}
-		public System.Xml.Linq.XElement Response {get; internal set;}
 
 		internal WebDavEntry ()
 		{
