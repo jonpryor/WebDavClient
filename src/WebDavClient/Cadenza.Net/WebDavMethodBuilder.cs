@@ -62,16 +62,6 @@ namespace Cadenza.Net
 			return new MemoryStream (Encoding.UTF8.GetBytes (e.ToString ()));
 		}
 
-		static IDictionary<string, string> GetRequestHeaders (params string[] extra)
-		{
-			if (extra == null || extra.Length == 0)
-				return null;
-			var n = new Dictionary<string, string> ();
-			for (int i = 0; i < extra.Length; i += 2)
-				n [extra [i]] = extra [i + 1];
-			return n;
-		}
-
 		public Task<TResult> CreateMethodAsync<TResult> (string requestMethod, Uri uri, TResult result)
 			where TResult : WebDavMethod
 		{
