@@ -18,9 +18,12 @@ namespace Cadenza.Net {
 			}
 		}
 
-		protected WebDavMethod (Stream content)
+		private string contentType;
+
+		protected WebDavMethod (Stream content = null, string contentType = null)
 		{
 			this.content = content;
+			this.contentType = contentType;
 		}
 
 		internal Task UploadContentAsync ()
@@ -28,8 +31,10 @@ namespace Cadenza.Net {
 			if (content == null)
 				return Task.Factory.StartNew (() => {});
 
-			Request.ContentLength   = content.Length;
-			Request.ContentType     = "text/xml";
+			if (content.CanSeek)
+				Request.ContentLength   = content.Length;
+			if (contentType != null)
+				Request.ContentType     = contentType;
 
 			if (Builder.Log != null) {
 				foreach (string key in Request.Headers.Keys)

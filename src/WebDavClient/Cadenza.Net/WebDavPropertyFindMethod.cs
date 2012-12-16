@@ -17,7 +17,7 @@ namespace Cadenza.Net {
 		}
 
 		internal WebDavPropertyFindMethod (Uri uri, Stream content, int depth)
-			: base (content)
+			: base (content, "text/xml")
 		{
 			Uri             = uri;
 			requestHeaders  = new Dictionary<string, string> () {
