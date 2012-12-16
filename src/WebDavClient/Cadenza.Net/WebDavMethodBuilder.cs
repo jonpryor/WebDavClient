@@ -22,7 +22,7 @@ namespace Cadenza.Net
 				server = value;
 			}
 		}
-		public NetworkCredential Credentials {get; set;}
+		public NetworkCredential NetworkCredential {get; set;}
 		public IDictionary<string, string> RequestHeaders {get; set;}
 		public TextWriter Log {get; set;}
 		
@@ -68,8 +68,8 @@ namespace Cadenza.Net
 		{
 			var request = (HttpWebRequest) HttpWebRequest.Create (uri);
 
-			if (Credentials != null) {
-				request.Credentials      = Credentials;
+			if (NetworkCredential != null) {
+				request.Credentials      = NetworkCredential;
 				request.PreAuthenticate  = true;
 			}
 
