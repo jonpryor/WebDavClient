@@ -149,19 +149,25 @@ namespace Cadenza.Tools.WebDav {
 			string[] v = Parse (args, 2);
 			string s = v [0];
 			string d = v [1];
-			using (var t = state.Builder.CreateDownloadMethodAsync (s, d != null ? File.OpenWrite (d) : Console.OpenStandardOutput ())) {
-				try {
-					t.Wait ();
-				} catch (Exception e) {
-					Console.Error.WriteLine ("webdav: {0}", e);
-					return;
+
+			Stream dest = d != null ? File.OpenWrite (d) : Console.OpenStandardOutput ();
+			try {
+				using (var t = state.Builder.CreateDownloadMethodAsync (s, dest)) {
+					try {
+						t.Wait ();
+					} catch (Exception e) {
+						Console.Error.WriteLine ("webdav: {0}", e);
+						return;
+					}
+					if (t.IsFaulted) {
+						Console.Error.WriteLine ("webdav: {0}", t.Exception.Flatten ());
+						return;
+					}
+					Console.WriteLine ("StatusCode: {0}", t.Result.ResponseStatusCode);
 				}
-				if (t.IsFaulted) {
-					Console.Error.WriteLine ("webdav: {0}", t.Exception.Flatten ());
-					return;
-				}
+			} finally {
 				if (d != null)
-					t.Result.DownloadedContents.Close ();
+					dest.Close ();
 			}
 		}
 
