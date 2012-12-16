@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -10,6 +11,12 @@ namespace Cadenza.Net {
 		internal WebRequest Request;
 		internal Stream content;
 		internal WebDavMethodBuilder Builder;
+
+		public virtual IDictionary<string, string>  RequestHeaders {
+			get {
+				return null;
+			}
+		}
 
 		protected WebDavMethod (Stream content)
 		{

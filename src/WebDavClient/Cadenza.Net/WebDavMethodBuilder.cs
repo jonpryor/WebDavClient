@@ -38,12 +38,16 @@ namespace Cadenza.Net
 
 		public Task<WebDavPropertyFindMethod> CreatePropertyFindMethodAsync (string path = null, int? depth = null, XElement request = null)
 		{
-			depth = depth ?? 1;
 			request = request ?? new XElement (WebDavNames.Propfind,
 					new XElement (WebDavNames.Propname));
 			var uri = CreateUri (path);
-			return CreateMethodAsync (new WebDavPropertyFindMethod (uri, ToStream (request)), uri, WebDavMethods.PropertyFind,
-					GetRequestHeaders ("Depth", depth == -1 ? "infinity" : depth.ToString ()));
+			var r   = new WebDavPropertyFindMethod (uri, ToStream (request), depth ?? 1);
+			return CreateMethodAsync (WebDavMethods.PropertyFind, uri, r);
+		}
+
+		public Task<WebDavPropertyFindMethod> CreateDownloadMethodAsync (string remotePath, string localPath)
+		{
+			return null;
 		}
 
 		Uri CreateUri (string path)
@@ -68,7 +72,7 @@ namespace Cadenza.Net
 			return n;
 		}
 
-		Task<TResult> CreateMethodAsync<TResult> (TResult result, Uri uri, string requestMethod, IDictionary<string, string> headers)
+		public Task<TResult> CreateMethodAsync<TResult> (string requestMethod, Uri uri, TResult result)
 			where TResult : WebDavMethod
 		{
 			var request = (HttpWebRequest) HttpWebRequest.Create (uri);
@@ -81,7 +85,7 @@ namespace Cadenza.Net
 			request.Method = requestMethod;
 
 			AddHeaders (request.Headers, RequestHeaders);
-			AddHeaders (request.Headers, headers);
+			AddHeaders (request.Headers, result.RequestHeaders);
 
 			/*
              * The following line fixes an authentication problem explained here:
