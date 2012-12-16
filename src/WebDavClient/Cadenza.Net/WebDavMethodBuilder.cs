@@ -45,9 +45,10 @@ namespace Cadenza.Net
 			return CreateMethodAsync (WebDavMethods.PropertyFind, uri, r);
 		}
 
-		public Task<WebDavPropertyFindMethod> CreateDownloadMethodAsync (string remotePath, string localPath)
+		public Task<WebDavDownloadMethod> CreateDownloadMethodAsync (string remotePath, Stream downloadedContents)
 		{
-			return null;
+			var r = new WebDavDownloadMethod (downloadedContents);
+			return CreateMethodAsync (WebRequestMethods.Http.Get, CreateUri (remotePath), r);
 		}
 
 		Uri CreateUri (string path)

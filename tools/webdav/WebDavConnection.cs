@@ -42,6 +42,7 @@ namespace Cadenza.Tools.WebDav {
 
 		static readonly Dictionary<string, Action<WebDavConnection, string>> Commands = new Dictionary<string, Action<WebDavConnection, string>>() {
 			{ "help",     ShowHelp },
+			{ "get",      Download },
 			{ "exit",     Exit },
 			{ "server",   Server },
 			{ "ls",       ListPath },
@@ -95,23 +96,10 @@ namespace Cadenza.Tools.WebDav {
 		[Help ("List files at PATH")]
 		static void ListPath (WebDavConnection state, string args)
 		{
-			string p = null;
-			int?   d = null;
-			string x = null;
-			int i = 0;
-			foreach (string s in ArgumentSource.GetArguments (new StringReader (args))) {
-				switch (i++) {
-				case 0:
-					p = s;
-					break;
-				case 1:
-					d = int.Parse (s);
-					break;
-				default:
-					x = x == null ? s : x + " " + s;
-					break;
-				}
-			}
+			string[] v = Parse (args, 3);
+			string p = v [0];
+			int?   d = v [1] == null ? null : (int?) int.Parse (v [1]);
+			string x = v [2];
 			XElement r = null;
 			if (x != null) {
 				try {
@@ -139,6 +127,41 @@ namespace Cadenza.Tools.WebDav {
 							e.CreationDate == null ? "" : e.CreationDate.Value.ToString ("MMM d HH:MM"),
 							e.Href);
 				}
+			}
+		}
+
+		static string[] Parse (string source, int max)
+		{
+			string[] values = new string [max];
+			int i = 0;
+			foreach (string s in ArgumentSource.GetArguments (new StringReader (source))) {
+				if (i < (values.Length-1))
+					values [i++] = s;
+				else
+					values [i] = values [i] == null ? s : values [i] + " " + s;
+			}
+			return values;
+		}
+
+		[Help ("download contents: get SOURCE [target-file]")]
+		static void Download (WebDavConnection state, string args)
+		{
+			string[] v = Parse (args, 2);
+			string s = v [0];
+			string d = v [1];
+			using (var t = state.Builder.CreateDownloadMethodAsync (s, d != null ? File.OpenWrite (d) : Console.OpenStandardOutput ())) {
+				try {
+					t.Wait ();
+				} catch (Exception e) {
+					Console.Error.WriteLine ("webdav: {0}", e);
+					return;
+				}
+				if (t.IsFaulted) {
+					Console.Error.WriteLine ("webdav: {0}", t.Exception.Flatten ());
+					return;
+				}
+				if (d != null)
+					t.Result.DownloadedContents.Close ();
 			}
 		}
 
