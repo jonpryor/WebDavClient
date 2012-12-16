@@ -18,9 +18,11 @@ namespace Cadenza.Net {
 			}
 		}
 
-		public WebHeaderCollection                  ResponseHeaders         {get; private set;}
-		public long                                 ResponseContentLength   {get; private set;}
-		public string                               ResponseContentType     {get; private set;}
+		public WebHeaderCollection                  ResponseHeaders             {get; private set;}
+		public long                                 ResponseContentLength       {get; private set;}
+		public string                               ResponseContentType         {get; private set;}
+		public HttpStatusCode                       ResponseStatusCode          {get; private set;}
+		public string                               ResponseStatusDescription   {get; private set;}
 
 		private string contentType;
 
@@ -69,12 +71,14 @@ namespace Cadenza.Net {
 
 		private void GetResponse (IAsyncResult result)
 		{
-			using (var response = Request.EndGetResponse (result)) {
+			using (var response = (HttpWebResponse) Request.EndGetResponse (result)) {
 				ResponseHeaders = new WebHeaderCollection () {
 					response.Headers,
 				};
-				ResponseContentLength   = response.ContentLength;
-				ResponseContentType     = response.ContentType;
+				ResponseContentLength       = response.ContentLength;
+				ResponseContentType         = response.ContentType;
+				ResponseStatusCode          = response.StatusCode;
+				ResponseStatusDescription   = response.StatusDescription;
 				using (var stream = response.GetResponseStream()) {
 					var t = stream;
 					if (Builder.Log != null) {
