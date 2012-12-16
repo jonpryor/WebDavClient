@@ -18,6 +18,10 @@ namespace Cadenza.Net {
 			}
 		}
 
+		public WebHeaderCollection                  ResponseHeaders         {get; private set;}
+		public long                                 ResponseContentLength   {get; private set;}
+		public string                               ResponseContentType     {get; private set;}
+
 		private string contentType;
 
 		protected WebDavMethod (Stream content = null, string contentType = null)
@@ -65,17 +69,26 @@ namespace Cadenza.Net {
 
 		private void GetResponse (IAsyncResult result)
 		{
-			using (var response = Request.EndGetResponse (result))
-			using (var stream = response.GetResponseStream()) {
-				var t = stream;
-				if (Builder.Log != null) {
-					t = new MemoryStream ();
-					stream.CopyTo (t);
-					t.Position = 0;
-					Builder.Log.WriteLine (new StreamReader (t).ReadToEnd ());
-					t.Position = 0;
+			using (var response = Request.EndGetResponse (result)) {
+				ResponseHeaders = new WebHeaderCollection () {
+					response.Headers,
+				};
+				ResponseContentLength   = response.ContentLength;
+				ResponseContentType     = response.ContentType;
+				using (var stream = response.GetResponseStream()) {
+					var t = stream;
+					if (Builder.Log != null) {
+						foreach (var key in ResponseHeaders.AllKeys)
+							Console.WriteLine ("{0}: {1}", key, ResponseHeaders [key]);
+						Console.WriteLine ();
+						t = new MemoryStream ();
+						stream.CopyTo (t);
+						t.Position = 0;
+						Builder.Log.WriteLine (new StreamReader (t).ReadToEnd ());
+						t.Position = 0;
+					}
+					OnResponse (t);
 				}
-				OnResponse (t);
 			}
 		}
 
