@@ -49,7 +49,7 @@ namespace Cadenza.Tools.WebDav {
 			{ "verbose",  SetLogging },
 		};
 
-		[Help ("List all commands")]
+		[Help ("`help`; List all commands")]
 		static void ShowHelp (WebDavConnection state, string args)
 		{
 			Console.WriteLine ("webdav commands--");
@@ -77,13 +77,13 @@ namespace Cadenza.Tools.WebDav {
 			}
 		}
 
+		[Help ("`exit`; Quit the program.")]
 		static void Exit (WebDavConnection state, string ignored)
 		{
 			Environment.Exit (0);
 		}
 
-		[Help ("SERVER")]
-		[Help ("Open a connection to the specified WebDAV server.")]
+		[Help ("`server URI`; Connect to WebDAV server URI.")]
 		static void Server (WebDavConnection state, string server)
 		{
 			if (!string.IsNullOrEmpty (server))
@@ -92,8 +92,11 @@ namespace Cadenza.Tools.WebDav {
 			    Console.WriteLine ("Server: {0}", state.Builder.Server);
 		}
 
-		[Help ("PATH")]
-		[Help ("List files at PATH")]
+		[Help ("`ls [PATH [DEPTH [XML-REQUEST]]`;\n" +
+		       "List collection contents.\n" +
+		       "PATH: collection name to list; default=''\n" +
+		       "DEPTH: -1: infinity; 0: item; 1: children\n" +
+		       "XML-REQUEST: XML request to send to server.")]
 		static void ListPath (WebDavConnection state, string args)
 		{
 			string[] v = Parse (args, 3);
@@ -143,7 +146,8 @@ namespace Cadenza.Tools.WebDav {
 			return values;
 		}
 
-		[Help ("download contents: get SOURCE [target-file]")]
+		[Help ("`get SOURCE [TARGET]`: Download SOURCE.\n" +
+		       "If TARGET not specified, use stdout.")]
 		static void Download (WebDavConnection state, string args)
 		{
 			string[] v = Parse (args, 2);
@@ -171,7 +175,8 @@ namespace Cadenza.Tools.WebDav {
 			}
 		}
 
-		[Help ("Enable verbose logging")]
+		[Help ("`verbose [ENABLE]`: Show logging status.\n" +
+		       "ENABLE: 1/true=enables; 0/false=disables logging.")]
 		static void SetLogging (WebDavConnection state, string args)
 		{
 			if (string.IsNullOrEmpty (args)) {
