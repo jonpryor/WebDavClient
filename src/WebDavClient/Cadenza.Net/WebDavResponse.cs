@@ -62,7 +62,7 @@ namespace Cadenza.Net {
 		public DateTime? CreationDate {
 			get {
 				var date = GetProps (WebDavNames.CreationDate).FirstOrDefault ();
-				if (date == null)
+				if (date == null || string.IsNullOrEmpty (date.Value))
 					return null;
 				return DateTime.Parse (date.Value);
 			}
@@ -91,7 +91,7 @@ namespace Cadenza.Net {
 		public long? ContentLength {
 			get {
 				var cl = GetProps (WebDavNames.GetContentLength).FirstOrDefault ();
-				if (cl == null)
+				if (cl == null || string.IsNullOrEmpty (cl.Value))
 					return null;
 				return long.Parse (cl.Value);
 			}
