@@ -1,14 +1,14 @@
 ﻿/*
- * (C) 2010 Kees van den Broek: kvdb@kvdb.net
- *          D-centralize: d-centralize.nl
- *          
- * Latest van den Broek version and examples on: http://kvdb.net/projects/webdav
- * 
- * Feel free to use this code however you like.
- * http://creativecommons.org/license/zero/
- * 
- * Copyright (C) 2012 Xamarin Inc. (http://xamarin.com)
- */
+* (C) 2010 Kees van den Broek: kvdb@kvdb.net
+*          D-centralize: d-centralize.nl
+*          
+* Latest van den Broek version and examples on: http://kvdb.net/projects/webdav
+* 
+* Feel free to use this code however you like.
+* http://creativecommons.org/license/zero/
+* 
+* Copyright (C) 2012 Xamarin Inc. (http://xamarin.com)
+*/
 
 using System;
 using System.Collections.Generic;
@@ -17,44 +17,46 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-/*
-// If you want to disable SSL certificate validation
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-*/
 
 namespace Cadenza.Net
 {
-	public enum WebDavEntryType {
-		Default,
-		Directory,
-		File,
-	}
+    public enum WebDavEntryType {
+	    Default,
+	    Directory,
+	    File,
+    }
 
-	public class WebDavEntry {
+    public class WebDavEntry {
 
-		public string Directory {get; internal set;}
-		public string Name {get; internal set;}
-		public string Path {get; internal set;}
-		public WebDavEntryType Type {get; internal set;}
+	    public string Directory {get; internal set;}
+	    public string Name {get; internal set;}
+	    public string Path {get; internal set;}
+        public string AbsoluteUri { get; internal set; }
+        public WebDavEntryType Type {get; internal set;}
+        public long? ContentLength { get; internal set; }
 
-		internal WebDavEntry ()
-		{
-		}
+	    internal WebDavEntry ()
+	    {
+	    }
 
-		public override string ToString ()
-		{
-			return Path;
-		}
-	}
+	    public override string ToString ()
+	    {
+		    return Path;
+	    }
+    }
 
-    public class WebDavClient
+    public class WebDavClient : IDisposable
     {
 
         //XXX: submit along with state object.
         HttpWebRequest httpWebRequest;
 
         #region WebDAV connection parameters
+        /// <summary>
+        /// Request builder to handle authentication, proxy and so on
+        /// </summary>
+        public HttpRequestBuilder requestBuilder { get; set; }
+
         private String server;
         /// <summary>
         /// Specify the WebDAV hostname (required).
@@ -90,46 +92,22 @@ namespace Cadenza.Net
             get { return port; }
             set { port = value; }
         }
-        private String user;
-        /// <summary>
-        /// Specify a username (optional)
-        /// </summary>
-        public String User
-        {
-            get { return user; }
-            set { user = value; }
-        }
-        private String pass;
-        /// <summary>
-        /// Specify a password (optional)
-        /// </summary>
-        public String Pass
-        {
-            get { return pass; }
-            set { pass = value; }
-        }
-        private String domain = null;
-        public String Domain
-        {
-            get { return domain; }
-            set { domain = value; }
-        }
 
         Uri getServerUrl(String path, Boolean appendTrailingSlash)
         {
             String completePath = basePath;
             if (path != null)
             {
-            	completePath += path.Trim('/');
+                completePath += path.Trim('/');
             }
 
             if (appendTrailingSlash && completePath.EndsWith("/") == false) { completePath += '/'; }
 
             if(port.HasValue) {
-				return new Uri(server + ":" + port + completePath);
+			    return new Uri(server + ":" + port + completePath);
             }
             else {
-            	return new Uri(server + completePath);
+                return new Uri(server + completePath);
             }
             
         }
@@ -149,7 +127,7 @@ namespace Cadenza.Net
         /// List files in the given directory
         /// </summary>
         /// <param name="path"></param>
-		public Task<IEnumerable<WebDavEntry>> List(String path)
+	    public Task<IEnumerable<WebDavEntry>> List(String path)
         {
             // Set default depth to 1. This would prevent recursion.
             return List(path, 1);
@@ -161,7 +139,7 @@ namespace Cadenza.Net
         /// <param name="remoteFilePath">List only files in this path</param>
         /// <param name="depth">Recursion depth</param>
         /// <returns>A list of files (entries without a trailing slash) and directories (entries with a trailing slash)</returns>
-		public Task<IEnumerable<WebDavEntry>> List(String remoteFilePath, int? depth)
+	    public Task<IEnumerable<WebDavEntry>> List(String remoteFilePath, int? depth)
         {
             // Uri should end with a trailing slash
             Uri listUri = getServerUrl(remoteFilePath, true);
@@ -180,13 +158,17 @@ namespace Cadenza.Net
                 headers.Add("Depth", depth.ToString());
             }
 
-			return WebDavOperation(listUri, "PROPFIND", headers, Encoding.UTF8.GetBytes(propfind.ToString()), null, FinishList, remoteFilePath);
+		    return WebDavOperation(listUri, "PROPFIND", headers, Encoding.UTF8.GetBytes(propfind.ToString()), null, FinishList, remoteFilePath);
         }
 
+        private String NormalizePath(String path)
+        {
+            return path.Trim('/');
+        }
 
         IEnumerable<WebDavEntry> FinishList(IAsyncResult result)
         {
-            string remoteFilePath = (string)result.AsyncState;
+            string remoteFilePath = NormalizePath((string)result.AsyncState);
 
             using (HttpWebResponse response = (HttpWebResponse)httpWebRequest.EndGetResponse(result))
             {
@@ -201,21 +183,56 @@ namespace Cadenza.Net
                     {
                         XmlNode xmlNode = node.SelectSingleNode("d:href", xmlNsManager);
                         string filepath = Uri.UnescapeDataString(xmlNode.InnerXml);
-						if (filepath.StartsWith (basePath))
-							filepath = filepath.Substring (basePath.Length);
-						if (filepath.Length == 0 || filepath == remoteFilePath)
-							continue;
-						var type = filepath.EndsWith ("/") ? WebDavEntryType.Directory : WebDavEntryType.File;
-						int endDir = filepath.LastIndexOf ('/');
-						if (type == WebDavEntryType.Directory)
-							endDir = filepath.LastIndexOf ("/", endDir - 1);
-						endDir++;
-						yield return new WebDavEntry {
-							Directory   = filepath.Substring (0, endDir),
-							Name        = filepath.Substring (endDir),
-							Path        = filepath,
-							Type        = type,
-						};
+                        string uri = filepath;
+					    if (filepath.StartsWith (basePath))
+						    filepath = filepath.Substring (basePath.Length);
+
+                        // skip the "query" node
+					    if (filepath.Length == 0 || NormalizePath(filepath) == remoteFilePath)
+						    continue;
+					    var type = filepath.EndsWith ("/") ? WebDavEntryType.Directory : WebDavEntryType.File;
+					    int endDir = filepath.LastIndexOf ('/');
+					    if (type == WebDavEntryType.Directory)
+						    endDir = filepath.LastIndexOf ("/", endDir - 1);
+					    endDir++;
+
+                        long? contentLength = null;
+
+                        XmlNode propStatNode = node.SelectSingleNode("d:propstat", xmlNsManager);
+                        if(propStatNode != null)
+                        {
+                            XmlNode propNode = propStatNode.SelectSingleNode("d:prop", xmlNsManager);
+                            if (propNode != null)
+                            {
+                                // get content length
+                                XmlNode prop = propNode.SelectSingleNode("d:getcontentlength", xmlNsManager);
+                                if (prop != null)
+                                {
+                                    contentLength = long.Parse(prop.InnerText);
+                                }
+
+                                // get content type
+                                prop = propNode.SelectSingleNode("d:resourcetype", xmlNsManager);
+                                if (prop != null)
+                                {
+                                    if (prop.SelectSingleNode("d:collection", xmlNsManager) != null)
+                                        type = WebDavEntryType.Directory;
+                                    else
+                                        type = WebDavEntryType.File;
+                                }
+                            }
+                        }
+                        // get name and get rid of trailing /
+                        var name = filepath.Substring(endDir).Trim('/');
+
+                        yield return new WebDavEntry {
+                            Directory = filepath.Substring(0, endDir),
+                            Name = name,
+                            Path = filepath,
+                            Type = type,
+                            ContentLength = contentLength,
+                            AbsoluteUri = uri
+                        };
                     }
                 }
             }
@@ -226,7 +243,7 @@ namespace Cadenza.Net
         /// </summary>
         /// <param name="localFilePath">Local path and filename of the file to upload</param>
         /// <param name="remoteFilePath">Destination path and filename of the file on the server</param>
-		public Task<HttpStatusCode> Upload(String localFilePath, String remoteFilePath)
+	    public Task<HttpStatusCode> Upload(String localFilePath, String remoteFilePath)
         {
             return Upload(localFilePath, remoteFilePath, null);
         }
@@ -245,14 +262,12 @@ namespace Cadenza.Net
             Uri uploadUri = getServerUrl(remoteFilePath, false);
             string method = WebRequestMethods.Http.Put.ToString();
 
-			return WebDavOperation(uploadUri, method, null, null, localFilePath, FinishUpload, state);
+		    return WebDavOperation(uploadUri, method, null, null, localFilePath, FinishUpload, state);
         }
 
 
         HttpStatusCode FinishUpload(IAsyncResult result)
         {
-            int statusCode = 0;
-
             using (HttpWebResponse response = (HttpWebResponse)httpWebRequest.EndGetResponse(result))
             {
                 return response.StatusCode;
@@ -271,7 +286,7 @@ namespace Cadenza.Net
             Uri downloadUri = getServerUrl(remoteFilePath, false);
             string method = WebRequestMethods.Http.Get.ToString();
 
-			return WebDavOperation(downloadUri, method, null, null, null, FinishDownload, localFilePath);
+		    return WebDavOperation(downloadUri, method, null, null, null, FinishDownload, localFilePath);
         }
 
 
@@ -282,7 +297,7 @@ namespace Cadenza.Net
             using (HttpWebResponse response = (HttpWebResponse)httpWebRequest.EndGetResponse(result))
             {
                 int contentLength = int.Parse(response.GetResponseHeader("Content-Length"));
-				int read = 0;
+			    int read = 0;
                 using (Stream s = response.GetResponseStream())
                 {
                     using (FileStream fs = new FileStream(localFilePath, FileMode.Create, FileAccess.Write))
@@ -293,13 +308,13 @@ namespace Cadenza.Net
                         {
                             bytesRead = s.Read(content, 0, content.Length);
                             fs.Write(content, 0, bytesRead);
-							read += bytesRead;
+						    read += bytesRead;
                         } while (bytesRead > 0);
                     }
                 }
-				if (contentLength != read)
-					Console.WriteLine ("Length read doesn't match header! Content-Length={0}; Read={1}", contentLength, read);
-				return response.StatusCode;
+			    if (contentLength != read)
+				    Console.WriteLine ("Length read doesn't match header! Content-Length={0}; Read={1}", contentLength, read);
+			    return response.StatusCode;
             }
         }
 
@@ -318,14 +333,41 @@ namespace Cadenza.Net
             return WebDavOperation (dirUri, method, null, null, null, FinishCreateDir, null);
         }
 
+        public Task<Boolean> Exists(string remotePath)
+        {
+            string method = WebRequestMethods.Http.Head.ToString();
+            Uri dirUri = getServerUrl(remotePath, false);
+            return WebDavOperation(dirUri, method, null, null, null, (result) =>
+            {
+                try
+                {
+                    using (HttpWebResponse response = (HttpWebResponse)httpWebRequest.EndGetResponse(result))
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch (WebException wex)
+                {
+                    var resp = (HttpWebResponse)wex.Response;
+                    if (resp != null && resp.StatusCode == HttpStatusCode.NotFound)
+                        return false;
+                    throw wex;
+                }
+            }, null);
+        }
 
         HttpStatusCode FinishCreateDir(IAsyncResult result)
         {
-            int statusCode = 0;
-
-            using (HttpWebResponse response = (HttpWebResponse)httpWebRequest.EndGetResponse(result))
+            try
             {
-                return response.StatusCode;
+                using (HttpWebResponse response = (HttpWebResponse)httpWebRequest.EndGetResponse(result))
+                {
+                    return response.StatusCode;
+                }
+            } catch (WebException wex)
+            {
+                var webresponse = ((WebException)wex).Response as HttpWebResponse;
+                return webresponse.StatusCode;
             }
         }
 
@@ -338,14 +380,12 @@ namespace Cadenza.Net
         {
             Uri delUri = getServerUrl(remoteFilePath, remoteFilePath.EndsWith("/"));
 
-			return WebDavOperation(delUri, "DELETE", null, null, null, FinishDelete, null);
+		    return WebDavOperation(delUri, "DELETE", null, null, null, FinishDelete, null);
         }
 
 
         HttpStatusCode FinishDelete(IAsyncResult result)
         {
-            int statusCode = 0;
-
             using (HttpWebResponse response = (HttpWebResponse)httpWebRequest.EndGetResponse(result))
             {
                 return response.StatusCode;
@@ -367,6 +407,12 @@ namespace Cadenza.Net
             public string uploadFilePath;
         }
 
+        Task<TResult> WebDavOperation<TResult>(Uri uri, string requestMethod, IDictionary<string, string> headers, byte[] content, string uploadFilePath, Func<IAsyncResult, TResult> callback, object state)
+        {
+            return WebDavOperation(uri, requestMethod, headers, content, null, uploadFilePath, callback, state);
+        }
+
+
         /// <summary>
         /// Perform the WebDAV call and fire the callback when finished.
         /// </summary>
@@ -377,42 +423,16 @@ namespace Cadenza.Net
         /// <param name="uploadFilePath"></param>
         /// <param name="callback"></param>
         /// <param name="state"></param>
-		Task<TResult> WebDavOperation<TResult>(Uri uri, string requestMethod, IDictionary<string, string> headers, byte[] content, string uploadFilePath, Func<IAsyncResult, TResult> callback, object state)
+        Task<TResult> WebDavOperation<TResult>(Uri uri, string requestMethod, IDictionary<string, string> headers, byte[] content, String contentType, string uploadFilePath, Func<IAsyncResult, TResult> callback, object state)
         {
-            httpWebRequest = (HttpWebRequest)HttpWebRequest.Create(uri);
+            httpWebRequest = requestBuilder.Build(uri);
 			
             /*
-             * The following line fixes an authentication problem explained here:
-             * http://www.devnewsgroups.net/dotnetframework/t9525-http-protocol-violation-long.aspx
-             */
-            System.Net.ServicePointManager.Expect100Continue = false;
-            
-            // If you want to disable SSL certificate validation
-            /*
-            System.Net.ServicePointManager.ServerCertificateValidationCallback +=
-            delegate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslError)
-            {
-                    bool validationResult = true;
-                    return validationResult;
-            };
+            * The following line fixes an authentication problem explained here:
+            * http://www.devnewsgroups.net/dotnetframework/t9525-http-protocol-violation-long.aspx
             */
-        
-            // The server may use authentication
-            if (user != null && pass != null)
-            {
-                NetworkCredential networkCredential;
-                if (domain != null)
-                {
-                    networkCredential = new NetworkCredential(user, pass, domain);
-                }
-                else
-                {
-                    networkCredential = new NetworkCredential(user, pass);
-                }
-                httpWebRequest.Credentials = networkCredential;
-                // Send authentication along with first request.
-                httpWebRequest.PreAuthenticate = true;
-            }
+            System.Net.ServicePointManager.Expect100Continue = false;
+
             httpWebRequest.Method = requestMethod;
 
             // Need to send along headers?
@@ -435,7 +455,8 @@ namespace Cadenza.Net
                     // The request either contains actual content...
                     httpWebRequest.ContentLength = content.Length;
                     asyncState.content = content;
-                    httpWebRequest.ContentType = "text/xml";
+                    if(contentType != null)
+                        httpWebRequest.ContentType = "text/xml";
                 }
                 else
                 {
@@ -445,17 +466,17 @@ namespace Cadenza.Net
                 }
 
                 // Perform asynchronous request.
-				return Task.Factory.FromAsync (asyncState.request.BeginGetRequestStream, ReadCallback, asyncState)
-					.ContinueWith (t => {
-						if (t.IsFaulted)
-							throw t.Exception;
-						return Task<TResult>.Factory.FromAsync (httpWebRequest.BeginGetResponse, callback, state).Result;
-					});
+			    return Task.Factory.FromAsync (asyncState.request.BeginGetRequestStream, ReadCallback, asyncState)
+				    .ContinueWith (t => {
+					    if (t.IsFaulted)
+						    throw t.Exception;
+					    return Task<TResult>.Factory.FromAsync (httpWebRequest.BeginGetResponse, callback, state).Result;
+				    });
             }
             else
             {
                 // Begin async communications
-				return Task<TResult>.Factory.FromAsync (httpWebRequest.BeginGetResponse, callback, state);
+			    return Task<TResult>.Factory.FromAsync (httpWebRequest.BeginGetResponse, callback, state);
             }
         }
 
@@ -491,6 +512,14 @@ namespace Cadenza.Net
                         //XXX: perform upload status callback
                     }
                 }
+            }
+        }
+
+        public void Dispose()
+        {
+            if (httpWebRequest != null)
+            {
+                httpWebRequest.Abort();
             }
         }
         #endregion
